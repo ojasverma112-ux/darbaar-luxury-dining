@@ -1,33 +1,34 @@
-import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
 
-interface Props {
-  children: React.ReactNode;
-  /** Set to true to require admin role on top of authentication */
+type Props = {
+  children: ReactNode;
   requireAdmin?: boolean;
-}
-
-const ProtectedRoute = ({ children, requireAdmin }: Props) => {
-  const { user, loading, isAdmin } = useAuth();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      // soft toast handled inside Auth page
-    }
-  }, [loading, user]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-  if (!user) return <Navigate to="/auth" replace />;
-  if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
-  return <>{children}</>;
 };
 
-export default ProtectedRoute;
+export default function ProtectedRoute({ children, requireAdmin = false }: Props) {
+  const { user, loading, isAdmin } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="p-6">Checking access...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
+  }
+
+  if (requireAdmin && !isAdmin) {
+    return (
+      <main className="min-h-screen p-6">
+        <h1 className="text-2xl font-semibold">Access denied</h1>
+        <p className="mt-2 text-sm opacity-80">
+          You are logged in, but this account is not an admin.
+        </p>
+      </main>
+    );
+  }
+
+  return <>{children}</>;
+}

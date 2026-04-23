@@ -1,6 +1,7 @@
 import hero from "@/assets/hero-tandoori.jpg";
 import { useI18n } from "@/contexts/I18nContext";
 import Particles from "./Particles";
+import Smoke from "./Smoke";
 import { ChevronDown } from "lucide-react";
 
 const Hero = () => {
@@ -25,6 +26,7 @@ const Hero = () => {
       </div>
 
       <Particles count={26} />
+      <Smoke />
 
       {/* Content */}
       <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-7xl flex-col items-center justify-center px-6 text-center pt-28 pb-20">

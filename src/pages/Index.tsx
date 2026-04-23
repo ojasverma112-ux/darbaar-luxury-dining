@@ -11,6 +11,7 @@ import Contact from "@/components/site/Contact";
 import Footer from "@/components/site/Footer";
 import CartDrawer from "@/components/site/CartDrawer";
 import StickyOrderBar from "@/components/site/StickyOrderBar";
+import CookieBanner from "@/components/site/CookieBanner";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -34,6 +35,7 @@ const Index = () => {
           <Footer />
           <CartDrawer />
           <StickyOrderBar />
+          <CookieBanner />
         </div>
       </CartProvider>
     </I18nProvider>

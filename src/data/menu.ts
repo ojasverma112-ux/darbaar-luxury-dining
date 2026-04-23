@@ -1,11 +1,16 @@
 import butterChicken from "@/assets/dish-butter-chicken.jpg";
-import biryani from "@/assets/dish-biryani.jpg";
+import biryani from "@/assets/food-biryani.jpg";
 import lambBhuna from "@/assets/dish-lamb-bhuna.jpg";
 import paneerTikka from "@/assets/dish-paneer-tikka.jpg";
-import naan from "@/assets/dish-naan.jpg";
-import gulabJamun from "@/assets/dish-gulab-jamun.jpg";
+import naan from "@/assets/food-naan.jpg";
+import gulabJamun from "@/assets/food-gulab-jamun.jpg";
 import fishCurry from "@/assets/dish-fish-curry.jpg";
-import tandoori from "@/assets/hero-tandoori.jpg";
+import tandoori from "@/assets/food-tandoori.jpg";
+import tikkaMasala from "@/assets/food-tikka-masala.jpg";
+import seekhKebab from "@/assets/food-seekh-kebab.jpg";
+import broccoli from "@/assets/food-broccoli.jpg";
+import buffet from "@/assets/food-buffet.jpg";
+import currytable from "@/assets/food-curry-table.jpg";
 
 export type SpiceLevel = 0 | 1 | 2 | 3;
 export type DietTag = "veg" | "vegan" | "halal" | "chef";
@@ -107,7 +112,7 @@ export const menu: MenuItem[] = [
 
   // Non-Veg Starters
   m("ns1", "Chicken 65", "Chicken 65", "Pittige Zuid-Indiase kip.", "Spicy South-Indian chicken.", 9.0, "starters-nonveg", { spice: 3, tags: ["halal"] }),
-  m("ns2", "Chicken Tikka", "Chicken Tikka", "Gemarineerde tandoori kipstukjes.", "Marinated tandoori chicken pieces.", 9.5, "starters-nonveg", { spice: 1, tags: ["halal", "chef"] }),
+  m("ns2", "Chicken Tikka", "Chicken Tikka", "Gemarineerde tandoori kipstukjes.", "Marinated tandoori chicken pieces.", 9.5, "starters-nonveg", { image: tikkaMasala, spice: 1, tags: ["halal", "chef"] }),
   m("ns3", "Lamb Samosa", "Lamb Samosa", "Driehoekjes gevuld met gekruid lam.", "Pastries filled with spiced lamb.", 6.0, "starters-nonveg", { tags: ["halal"] }),
   m("ns4", "Fish Pakora", "Fish Pakora", "Krokante visstukjes met chaat masala.", "Crisp fish pieces with chaat masala.", 9.0, "starters-nonveg", { spice: 1 }),
   m("ns5", "Prawn Pakora", "Prawn Pakora", "Garnalen in krokant beslag.", "Prawns in crispy batter.", 10.5, "starters-nonveg"),
@@ -117,13 +122,13 @@ export const menu: MenuItem[] = [
   m("t1", "Tandoori Chicken (half/whole)", "Tandoori Chicken (half/whole)", "Hele kip uit de tandoor.", "Whole chicken from the tandoor.", 14.5, "tandoori", { spice: 1, tags: ["halal", "chef"] }),
   m("t2", "Chicken Garlic Tikka", "Chicken Garlic Tikka", "Knoflook gemarineerde tikka.", "Garlic-marinated tikka.", 13.5, "tandoori", { spice: 1, tags: ["halal"] }),
   m("t3", "Fish Tandoori", "Fish Tandoori", "Vis gegrild in de tandoor.", "Fish grilled in the tandoor.", 16.5, "tandoori", { spice: 1 }),
-  m("t4", "Lamb Chops", "Lamb Chops", "Gekruide lamskoteletten.", "Spiced lamb chops.", 19.5, "tandoori", { spice: 1, tags: ["halal", "chef"] }),
+  m("t4", "Lamb Chops", "Lamb Chops", "Gekruide lamskoteletten.", "Spiced lamb chops.", 19.5, "tandoori", { image: seekhKebab, spice: 1, tags: ["halal", "chef"] }),
   m("t5", "Mixed Grill", "Mixed Grill", "Tandoori platter met assortiment.", "Tandoori assortment platter.", 21.5, "tandoori", { image: tandoori, spice: 1, tags: ["halal", "chef"] }),
 
   // Non-Veg Mains
   m("mn1", "Butter Chicken", "Butter Chicken", "Romige tomatensaus, gerookte tikka.", "Creamy tomato gravy, smoky tikka.", 14.5, "mains-nonveg", { image: butterChicken, spice: 1, tags: ["halal", "chef"] }),
   m("mn2", "Chicken Vindaloo", "Chicken Vindaloo", "Vurige Goa-stijl curry.", "Fiery Goan-style curry.", 14.5, "mains-nonveg", { spice: 3, tags: ["halal"] }),
-  m("mn3", "Chicken Madras", "Chicken Madras", "Pittige Zuid-Indiase curry.", "Spicy South-Indian curry.", 13.5, "mains-nonveg", { spice: 2, tags: ["halal"] }),
+  m("mn3", "Chicken Madras", "Chicken Madras", "Pittige Zuid-Indiase curry.", "Spicy South-Indian curry.", 13.5, "mains-nonveg", { image: currytable, spice: 2, tags: ["halal"] }),
   m("mn4", "Lamb Bhuna", "Lamb Bhuna", "Diepe geroosterde lamcurry.", "Deeply roasted lamb curry.", 16.5, "mains-nonveg", { image: lambBhuna, spice: 2, tags: ["halal", "chef"] }),
   m("mn5", "Rogan Josh", "Rogan Josh", "Klassieke Kashmir lamcurry.", "Classic Kashmiri lamb curry.", 16.5, "mains-nonveg", { spice: 1, tags: ["halal"] }),
   m("mn6", "Chicken Curry", "Chicken Curry", "Huisrecept kip curry.", "House recipe chicken curry.", 13.5, "mains-nonveg", { spice: 1, tags: ["halal"] }),
@@ -134,7 +139,7 @@ export const menu: MenuItem[] = [
   m("mv1", "Dal Makhni", "Dal Makhni", "Romige zwarte linzen, langzaam gekookt.", "Creamy black lentils, slow cooked.", 11.5, "mains-veg", { tags: ["veg", "chef"] }),
   m("mv2", "Palak Paneer", "Palak Paneer", "Spinazie met verse kaas.", "Spinach with fresh cheese.", 12.5, "mains-veg", { tags: ["veg"] }),
   m("mv3", "Chana Masala", "Chana Masala", "Kikkererwten in pittige tomatensaus.", "Chickpeas in spiced tomato sauce.", 11.0, "mains-veg", { spice: 1, tags: ["vegan", "veg"] }),
-  m("mv4", "Mixed Vegetables", "Mixed Vegetables", "Seizoensgroenten in masala.", "Seasonal vegetables in masala.", 11.0, "mains-veg", { tags: ["vegan", "veg"] }),
+  m("mv4", "Mixed Vegetables", "Mixed Vegetables", "Seizoensgroenten in masala.", "Seasonal vegetables in masala.", 11.0, "mains-veg", { image: broccoli, tags: ["vegan", "veg"] }),
   m("mv5", "Paneer Butter Masala", "Paneer Butter Masala", "Verse kaas in romige tomatensaus.", "Fresh cheese in creamy tomato sauce.", 12.5, "mains-veg", { image: paneerTikka, tags: ["veg", "chef"] }),
   m("mv6", "Aloo Gobi", "Aloo Gobi", "Aardappel en bloemkool curry.", "Potato and cauliflower curry.", 11.0, "mains-veg", { tags: ["vegan", "veg"] }),
 
@@ -153,7 +158,7 @@ export const menu: MenuItem[] = [
   m("b2", "Lamb Biryani", "Lamb Biryani", "Aromatische rijst met mals lam.", "Aromatic rice with tender lamb.", 16.5, "biryani", { spice: 1, tags: ["halal"] }),
   m("b3", "Veg Biryani", "Veg Biryani", "Gekruide rijst met groenten.", "Spiced rice with vegetables.", 12.5, "biryani", { tags: ["veg"] }),
   m("b4", "Prawn Biryani", "Prawn Biryani", "Saffraan rijst met garnalen.", "Saffron rice with prawns.", 17.5, "biryani", { spice: 1 }),
-  m("b5", "Biryani Delight (sharing)", "Biryani Delight (sharing)", "Royale schotel om te delen.", "Royal sharing platter.", 28.0, "biryani", { tags: ["chef"] }),
+  m("b5", "Biryani Delight (sharing)", "Biryani Delight (sharing)", "Royale schotel om te delen.", "Royal sharing platter.", 28.0, "biryani", { image: buffet, tags: ["chef"] }),
 
   // Breads
   m("br1", "Butter Naan", "Butter Naan", "Klassieke tandoori naan met boter.", "Classic tandoori naan with butter.", 3.5, "breads", { tags: ["veg"] }),

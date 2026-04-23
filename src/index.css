@@ -225,4 +225,26 @@
     color: hsl(var(--gold));
     font-family: 'Cormorant Garamond', serif;
   }
+
+  /* Rising smoke / steam from hot food */
+  .smoke {
+    position: absolute;
+    bottom: 30%;
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, hsl(38 35% 92% / 0.55) 0%, hsl(38 35% 92% / 0.18) 40%, transparent 70%);
+    filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    animation: smoke-rise var(--dur, 6s) ease-out infinite;
+    animation-delay: var(--delay, 0s);
+    will-change: transform, opacity;
+  }
+  @keyframes smoke-rise {
+    0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+    15%  { opacity: 0.55; }
+    50%  { transform: translate(var(--drift, 10px), -120px) scale(1.4); opacity: 0.4; }
+    100% { transform: translate(calc(var(--drift, 10px) * 1.6), -260px) scale(2.2); opacity: 0; }
+  }
 }

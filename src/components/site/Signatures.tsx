@@ -1,5 +1,5 @@
 import { useI18n } from "@/contexts/I18nContext";
-import { menu, signatures } from "@/data/menu";
+import { useMenu, type MenuItem } from "@/hooks/useMenu";
 import { useCart } from "@/contexts/CartContext";
 import { Plus } from "lucide-react";
 import SectionHeading from "./SectionHeading";
@@ -7,12 +7,13 @@ import SectionHeading from "./SectionHeading";
 const Signatures = () => {
   const { t, lang } = useI18n();
   const { add } = useCart();
+  const { menu, signatures } = useMenu();
   const items = signatures
     .map((s) => {
       const item = menu.find((m) => m.id === s.id);
       return item ? { ...item, image: s.image } : null;
     })
-    .filter(Boolean) as (typeof menu[number])[];
+    .filter(Boolean) as MenuItem[];
 
   return (
     <section id="signatures" className="relative py-24 sm:py-32">

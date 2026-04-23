@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "@/contexts/I18nContext";
-import { categories, menu, type CategoryId, type MenuItem } from "@/data/menu";
+import { useMenu, categories, type CategoryId, type MenuItem } from "@/hooks/useMenu";
 import { useCart } from "@/contexts/CartContext";
 import { Flame, Leaf, Plus, Search, Sparkles } from "lucide-react";
 import SectionHeading from "./SectionHeading";
@@ -62,6 +62,7 @@ const MenuCard = ({ item }: { item: MenuItem }) => {
 
 const Menu = () => {
   const { t, lang } = useI18n();
+  const { menu } = useMenu();
   const [active, setActive] = useState<CategoryId | "all">("all");
   const [query, setQuery] = useState("");
 
@@ -77,7 +78,7 @@ const Menu = () => {
         m.desc.en.toLowerCase().includes(q)
       );
     });
-  }, [active, query]);
+  }, [active, query, menu]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};

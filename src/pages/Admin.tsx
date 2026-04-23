@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -16,8 +16,10 @@ interface Zone {
   id: string; area: string; postcodes: string[]; min_order_value: number;
   delivery_fee: number; free_above: number | null; active: boolean;
 }
+type OrderStatus = "pending" | "confirmed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
+
 interface Order {
-  id: string; order_number: string; status: string; method: string;
+  id: string; order_number: string; status: OrderStatus; method: string;
   customer_first_name: string; customer_last_name: string; customer_email: string;
   customer_phone: string; postcode: string | null; total: number;
   created_at: string;
@@ -268,7 +270,7 @@ const OrdersTab = () => {
   };
   useEffect(() => { load(); }, []);
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: OrderStatus) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) toast({ title: "Update failed", variant: "destructive" });
     else { toast({ title: "Order updated" }); load(); }
@@ -298,10 +300,10 @@ const OrdersTab = () => {
               <div className="text-gold font-medium text-lg">€{Number(o.total).toFixed(2)}</div>
               <select
                 value={o.status}
-                onChange={(e) => updateStatus(o.id, e.target.value)}
+                onChange={(e) => updateStatus(o.id, e.target.value as OrderStatus)}
                 className="mt-1 rounded-full gold-border bg-ink px-3 py-1 text-xs text-ivory"
               >
-                {["pending", "confirmed", "preparing", "out_for_delivery", "delivered", "cancelled"].map((s) => (
+                {(["pending", "confirmed", "preparing", "out_for_delivery", "delivered", "cancelled"] as const).map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

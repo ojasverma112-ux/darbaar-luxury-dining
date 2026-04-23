@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Globe, Menu as MenuIcon, ShoppingBag, X } from "lucide-react";
+import { Globe, Menu as MenuIcon, ShieldCheck, ShoppingBag, User, X } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo-delhi-darbaar.png";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +19,7 @@ const sectionLinks: { id: string; key: "nav.menu" | "nav.signatures" | "nav.stor
 const Navbar = () => {
   const { t, lang, setLang } = useI18n();
   const { count, openCart } = useCart();
+  const { user, isAdmin } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -84,6 +87,25 @@ const Navbar = () => {
                 <Globe className="h-3.5 w-3.5" />
                 <span className="uppercase tracking-wider">{lang === "nl" ? "EN" : "NL"}</span>
               </button>
+
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-full gold-border px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/10"
+                  aria-label="Admin"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" /> Admin
+                </Link>
+              )}
+
+              <Link
+                to="/auth"
+                className="rounded-full p-2.5 gold-border hover:bg-gold/10 transition-all"
+                aria-label={user ? "Account" : "Sign in"}
+                title={user?.email ?? "Sign in"}
+              >
+                <User className="h-4 w-4 text-ivory" />
+              </Link>
 
               <button
                 onClick={openCart}

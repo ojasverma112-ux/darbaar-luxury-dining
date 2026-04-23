@@ -13,31 +13,34 @@ import CartDrawer from "@/components/site/CartDrawer";
 import StickyOrderBar from "@/components/site/StickyOrderBar";
 import CookieBanner from "@/components/site/CookieBanner";
 import { I18nProvider } from "@/contexts/I18nContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
 const Index = () => {
   return (
     <I18nProvider>
-      <CartProvider>
-        <div className="min-h-screen bg-background text-foreground">
-          <PromoBar />
-          <Navbar />
-          <main>
-            <Hero />
-            <TrustBar />
-            <Signatures />
-            <Story />
-            <Menu />
-            <Reviews />
-            <Reservation />
-            <Contact />
-          </main>
-          <Footer />
-          <CartDrawer />
-          <StickyOrderBar />
-          <CookieBanner />
-        </div>
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <PromoBar />
+            <Navbar />
+            <main>
+              <Hero />
+              <TrustBar />
+              <Signatures />
+              <Story />
+              <Menu />
+              <Reviews />
+              <Reservation />
+              <Contact />
+            </main>
+            <Footer />
+            <CartDrawer />
+            <StickyOrderBar />
+            <CookieBanner />
+          </div>
+        </CartProvider>
+      </AuthProvider>
     </I18nProvider>
   );
 };

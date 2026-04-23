@@ -10,7 +10,7 @@ const dict = {
     "nav.contact": "Contact",
     "nav.order": "Bestel online",
 
-    "hero.eyebrow": "Sinds 1996 · Hilversum",
+    "hero.eyebrow": "Chef met 28+ jaar ervaring · Hilversum",
     "hero.title": "Authentiek Indiaas in het hart van Hilversum",
     "hero.sub": "Traditionele recepten, vurige tandoor, elegante sfeer. Dineren, afhalen & bezorging.",
     "hero.cta.order": "Bestel online",
@@ -32,7 +32,7 @@ const dict = {
     "story.eyebrow": "Ons verhaal",
     "story.title": "Een koninklijke tafel in Hilversum",
     "story.body": "Delhi Darbaar opent haar deuren in Havenstraat 75 met één belofte: de smaak van India zoals hij hoort te smaken. Onze chefs koken zoals hun ouders kookten — verse specerijen, levende tandoor, geduldige sauzen. Dineer in onze warme zaal, haal op of laat het thuis bezorgen.",
-    "story.years": "Jaar culinaire ervaring",
+    "story.years": "Jaar ervaring van onze chef",
     "story.recipes": "Authentieke recepten",
     "story.daily": "Vers bereid · elke dag",
 
@@ -119,7 +119,7 @@ const dict = {
     "nav.contact": "Contact",
     "nav.order": "Order online",
 
-    "hero.eyebrow": "Since 1996 · Hilversum",
+    "hero.eyebrow": "Chef with 28+ years of experience · Hilversum",
     "hero.title": "Authentic Indian dining in the heart of Hilversum",
     "hero.sub": "Traditional recipes, fiery tandoor, elegant atmosphere. Dine-in, takeaway & delivery.",
     "hero.cta.order": "Order online",
@@ -141,7 +141,7 @@ const dict = {
     "story.eyebrow": "Our story",
     "story.title": "A royal table in Hilversum",
     "story.body": "Delhi Darbaar opens its doors at Havenstraat 75 with a single promise: the taste of India as it is meant to be. Our chefs cook the way their parents cooked — fresh spices, a live tandoor, patient sauces. Dine in our warm room, take away, or have it delivered to your door.",
-    "story.years": "Years of culinary expertise",
+    "story.years": "Years of chef's expertise",
     "story.recipes": "Authentic recipes",
     "story.daily": "Freshly prepared · every day",
 

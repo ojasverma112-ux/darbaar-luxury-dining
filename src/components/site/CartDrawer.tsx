@@ -453,30 +453,43 @@ const CartDrawer = () => {
 
                   {/* Postcode result */}
                   {method === "delivery" && bill.postcode.length === 4 && (
-                    <div className={cn(
-                      "mt-3 rounded-xl p-3 text-xs",
-                      quote.zone ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300"
-                                  : "bg-accent/10 border border-accent/30 text-accent"
-                    )}>
-                      {quote.zone ? (
-                        <div className="flex items-start gap-2">
-                          <Check className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                          <div>
-                            <div>{t("cart.postcodeOk")} <strong>{quote.zone.area}</strong></div>
-                            <div className="mt-1 text-ivory/70">
-                              {t("cart.zoneFee")}: €{quote.zone.fee.toFixed(2)}
-                              {quote.zone.freeAbove && ` (${lang === "nl" ? "gratis vanaf" : "free from"} €${quote.zone.freeAbove})`}
-                              {" · "}{t("cart.zoneMin")}: €{quote.zone.minOrder.toFixed(2)}
-                            </div>
-                            {quote.reason === "below-minimum" && (
-                              <div className="mt-1 text-accent">{t("cart.minOrder")} €{quote.zone.minOrder.toFixed(2)}</div>
-                            )}
-                          </div>
+                    <>
+                      {zoneStatus === "paused" ? (
+                        <div className="mt-3 rounded-xl p-3 text-xs bg-accent/10 border border-accent/30 text-accent flex items-start gap-2">
+                          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                          <span>
+                            {lang === "nl"
+                              ? "Bezorging naar deze postcode is tijdelijk gepauzeerd."
+                              : "Delivery to this postal code is temporarily paused."}
+                          </span>
                         </div>
                       ) : (
-                        t("cart.postcodeOut")
+                        <div className={cn(
+                          "mt-3 rounded-xl p-3 text-xs",
+                          quote.zone ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300"
+                                      : "bg-accent/10 border border-accent/30 text-accent"
+                        )}>
+                          {quote.zone ? (
+                            <div className="flex items-start gap-2">
+                              <Check className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                              <div>
+                                <div>{t("cart.postcodeOk")} <strong>{quote.zone.area}</strong></div>
+                                <div className="mt-1 text-ivory/70">
+                                  {t("cart.zoneFee")}: €{quote.zone.fee.toFixed(2)}
+                                  {quote.zone.freeAbove && ` (${lang === "nl" ? "gratis vanaf" : "free from"} €${quote.zone.freeAbove})`}
+                                  {" · "}{t("cart.zoneMin")}: €{quote.zone.minOrder.toFixed(2)}
+                                </div>
+                                {quote.reason === "below-minimum" && (
+                                  <div className="mt-1 text-accent">{t("cart.minOrder")} €{quote.zone.minOrder.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            t("cart.postcodeOut")
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
 
                   {/* Create account */}

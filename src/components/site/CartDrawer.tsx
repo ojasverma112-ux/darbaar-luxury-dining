@@ -95,8 +95,37 @@ const CartDrawer = () => {
 
   const checkoutPostcode = method === "delivery" ? bill.postcode : "";
   const quote = useMemo(() => quoteDelivery(checkoutPostcode, subtotalAfter), [checkoutPostcode, subtotalAfter]);
+
+  // Live check: is the entered postcode in an ACTIVE zone (per database)?
+  const [zoneStatus, setZoneStatus] = useState<"unknown" | "checking" | "active" | "paused" | "out">("unknown");
+  useEffect(() => {
+    if (method !== "delivery" || checkoutPostcode.length !== 4) {
+      setZoneStatus("unknown");
+      return;
+    }
+    let cancelled = false;
+    setZoneStatus("checking");
+    (async () => {
+      const { data } = await supabase
+        .from("delivery_zones")
+        .select("active")
+        .contains("postcodes", [checkoutPostcode]);
+      if (cancelled) return;
+      if (!data || data.length === 0) setZoneStatus("out");
+      else if (data.some((z) => z.active)) setZoneStatus("active");
+      else setZoneStatus("paused");
+    })();
+    return () => { cancelled = true; };
+  }, [checkoutPostcode, method]);
+
+  const deliveryClosed = !!settings && method === "delivery" && !settings.is_delivery_open;
+  const pickupClosed = !!settings && method === "pickup" && !settings.is_pickup_open;
+  const methodClosed = deliveryClosed || pickupClosed;
+  const postcodePaused = method === "delivery" && zoneStatus === "paused";
+
   const deliveryFee = method === "delivery" && quote.zone ? quote.fee : 0;
   const canDeliver = method !== "delivery" || quote.ok;
+  const canPlace = !methodClosed && !postcodePaused && canDeliver;
   const total = Math.max(0, subtotalAfter + deliveryFee);
 
   const apply = () => {

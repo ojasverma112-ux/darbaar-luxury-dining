@@ -5,8 +5,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, LogOut, Package, MapPin, ShoppingBag, Save, Edit2, X } from "lucide-react";
+import { Loader2, LogOut, Package, MapPin, ShoppingBag, Save, Edit2, X, Settings, Plus, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 
 interface Product {
   id: string; name_nl: string; name_en: string; description_nl: string | null;
@@ -23,6 +24,14 @@ interface Order {
   customer_first_name: string; customer_last_name: string; customer_email: string;
   customer_phone: string; postcode: string | null; total: number;
   created_at: string;
+}
+
+interface StoreSettings {
+  id: string;
+  is_delivery_open: boolean;
+  is_pickup_open: boolean;
+  temporary_message: string | null;
+  standard_lead_time_minutes: number;
 }
 
 const Header = () => {
@@ -42,6 +51,126 @@ const Header = () => {
   );
 };
 
+/* -------------------- Store Status (Panic Button) -------------------- */
+const StoreStatusTab = () => {
+  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [leadTime, setLeadTime] = useState(45);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("store_settings").select("*").limit(1).maybeSingle();
+    if (data) {
+      setSettings(data as StoreSettings);
+      setMessage(data.temporary_message ?? "");
+      setLeadTime(data.standard_lead_time_minutes ?? 45);
+    }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const updateField = async (patch: Partial<StoreSettings>) => {
+    if (!settings) return;
+    setSaving(true);
+    const { error } = await supabase.from("store_settings").update(patch).eq("id", settings.id);
+    setSaving(false);
+    if (error) toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Saved" }); load(); }
+  };
+
+  if (loading || !settings) return <Loader2 className="h-6 w-6 animate-spin text-gold mx-auto mt-10" />;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl gold-border bg-card/40 p-6">
+        <h3 className="font-serif text-2xl text-ivory mb-1">Panic controls</h3>
+        <p className="text-sm text-muted-foreground mb-6">Flip a switch to instantly stop accepting new online orders.</p>
+
+        <div className="space-y-5">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-ink/50 p-4">
+            <div>
+              <div className="text-base font-medium text-ivory">Accepting deliveries now</div>
+              <div className="text-xs text-muted-foreground">When off, the website blocks delivery checkout.</div>
+            </div>
+            <Switch
+              checked={settings.is_delivery_open}
+              onCheckedChange={(v) => updateField({ is_delivery_open: v })}
+              disabled={saving}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-ink/50 p-4">
+            <div>
+              <div className="text-base font-medium text-ivory">Accepting pickups now</div>
+              <div className="text-xs text-muted-foreground">When off, the website blocks pickup checkout.</div>
+            </div>
+            <Switch
+              checked={settings.is_pickup_open}
+              onCheckedChange={(v) => updateField({ is_pickup_open: v })}
+              disabled={saving}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl gold-border bg-card/40 p-6 space-y-3">
+        <h3 className="font-serif text-xl text-ivory">Customer notice banner</h3>
+        <p className="text-xs text-muted-foreground">
+          Shown at the top of the cart/checkout. Leave empty to hide. Example: "Kitchen is very busy, expect 90 min delays."
+        </p>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={2}
+          placeholder="e.g. Kitchen is very busy, expect 90 min delays"
+          className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => updateField({ temporary_message: message.trim() || null })}
+            disabled={saving}
+            className="rounded-full bg-gradient-gold px-4 py-2 text-xs font-semibold text-ink flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" /> Save banner
+          </button>
+          {settings.temporary_message && (
+            <button
+              onClick={() => { setMessage(""); updateField({ temporary_message: null }); }}
+              disabled={saving}
+              className="rounded-full gold-border px-4 py-2 text-xs text-ivory hover:bg-gold/10 flex items-center gap-1.5"
+            >
+              <X className="h-3.5 w-3.5" /> Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl gold-border bg-card/40 p-6 space-y-3">
+        <h3 className="font-serif text-xl text-ivory">Standard lead time (minutes)</h3>
+        <p className="text-xs text-muted-foreground">Shown to customers as the typical preparation/delivery time.</p>
+        <div className="flex gap-2 items-center">
+          <input
+            type="number" min={5} max={240}
+            value={leadTime}
+            onChange={(e) => setLeadTime(parseInt(e.target.value || "0"))}
+            className="w-32 rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+          />
+          <button
+            onClick={() => updateField({ standard_lead_time_minutes: leadTime })}
+            disabled={saving}
+            className="rounded-full bg-gradient-gold px-4 py-2 text-xs font-semibold text-ink flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" /> Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* -------------------- Products (unchanged) -------------------- */
 const ProductsTab = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,11 +283,70 @@ const ProductsTab = () => {
   );
 };
 
+/* -------------------- Zones (upgraded with create/delete + chips + per-zone toggle) -------------------- */
+const PostcodeChips = ({
+  postcodes,
+  onChange,
+}: { postcodes: string[]; onChange: (next: string[]) => void }) => {
+  const [input, setInput] = useState("");
+
+  const add = () => {
+    const cleaned = input.trim().replace(/\s+/g, "").slice(0, 4);
+    if (!/^\d{4}$/.test(cleaned)) {
+      toast({ title: "Postcode must be 4 digits", variant: "destructive" });
+      return;
+    }
+    if (postcodes.includes(cleaned)) {
+      toast({ title: "Already added" });
+      setInput("");
+      return;
+    }
+    onChange([...postcodes, cleaned]);
+    setInput("");
+  };
+
+  const remove = (pc: string) => onChange(postcodes.filter((p) => p !== pc));
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {postcodes.length === 0 && <span className="text-xs text-muted-foreground">No postcodes yet.</span>}
+        {postcodes.map((pc) => (
+          <span key={pc} className="inline-flex items-center gap-1 rounded-full bg-gold/15 border border-gold/30 px-2.5 py-1 text-xs text-ivory">
+            {pc}
+            <button type="button" onClick={() => remove(pc)} className="text-muted-foreground hover:text-accent" aria-label={`Remove ${pc}`}>
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          placeholder="Add postcode (e.g. 1211)"
+          inputMode="numeric"
+          maxLength={4}
+          className="flex-1 rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+        />
+        <button type="button" onClick={add} className="rounded-full gold-border px-3 py-2 text-xs text-ivory hover:bg-gold/10 flex items-center gap-1">
+          <Plus className="h-3 w-3" /> Add
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const emptyDraft = (): Partial<Zone> => ({
+  area: "", postcodes: [], min_order_value: 20, delivery_fee: 3.5, free_above: null, active: true,
+});
+
 const ZonesTab = () => {
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Partial<Zone>>({});
+  const [editing, setEditing] = useState<string | "new" | null>(null);
+  const [draft, setDraft] = useState<Partial<Zone>>(emptyDraft());
 
   const load = async () => {
     setLoading(true);
@@ -168,89 +356,150 @@ const ZonesTab = () => {
   };
   useEffect(() => { load(); }, []);
 
-  const save = async (id: string) => {
-    const { error } = await supabase.from("delivery_zones").update({
-      area: draft.area, postcodes: draft.postcodes,
-      min_order_value: draft.min_order_value, delivery_fee: draft.delivery_fee,
-      free_above: draft.free_above, active: draft.active,
-    }).eq("id", id);
-    if (error) {
-      toast({ title: "Save failed", description: error.message, variant: "destructive" });
-    } else {
+  const toggleActive = async (zone: Zone, active: boolean) => {
+    const { error } = await supabase.from("delivery_zones").update({ active }).eq("id", zone.id);
+    if (error) toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    else { toast({ title: active ? `${zone.area} resumed` : `${zone.area} paused` }); load(); }
+  };
+
+  const save = async () => {
+    if (!draft.area?.trim()) { toast({ title: "Area name required", variant: "destructive" }); return; }
+    if (!draft.postcodes?.length) { toast({ title: "Add at least one postcode", variant: "destructive" }); return; }
+
+    if (editing === "new") {
+      const { error } = await supabase.from("delivery_zones").insert({
+        area: draft.area, postcodes: draft.postcodes,
+        min_order_value: draft.min_order_value ?? 0, delivery_fee: draft.delivery_fee ?? 0,
+        free_above: draft.free_above ?? null, active: draft.active ?? true,
+      });
+      if (error) { toast({ title: "Create failed", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Zone created" });
+    } else if (editing) {
+      const { error } = await supabase.from("delivery_zones").update({
+        area: draft.area, postcodes: draft.postcodes,
+        min_order_value: draft.min_order_value ?? 0, delivery_fee: draft.delivery_fee ?? 0,
+        free_above: draft.free_above ?? null, active: draft.active ?? true,
+      }).eq("id", editing);
+      if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone updated" });
-      setEditing(null);
-      load();
     }
+    setEditing(null);
+    setDraft(emptyDraft());
+    load();
+  };
+
+  const remove = async (zone: Zone) => {
+    if (!confirm(`Delete zone "${zone.area}" permanently? Tip: use the Pause toggle if you only want a temporary stop.`)) return;
+    const { error } = await supabase.from("delivery_zones").delete().eq("id", zone.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Zone deleted" }); load(); }
   };
 
   if (loading) return <Loader2 className="h-6 w-6 animate-spin text-gold mx-auto mt-10" />;
 
+  const renderEditor = (id: string | "new") => (
+    <div className="rounded-xl gold-border bg-card/40 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="font-serif text-lg text-ivory">{id === "new" ? "New zone" : "Edit zone"}</h4>
+        <label className="flex items-center gap-2 text-xs text-ivory">
+          <Switch checked={draft.active ?? true} onCheckedChange={(v) => setDraft({ ...draft, active: v })} />
+          {draft.active ? "Active" : "Paused"}
+        </label>
+      </div>
+      <label className="block">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Area name</span>
+        <input value={draft.area ?? ""} onChange={(e) => setDraft({ ...draft, area: e.target.value })}
+          className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
+      </label>
+      <div>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Postcodes</span>
+        <div className="mt-1">
+          <PostcodeChips
+            postcodes={draft.postcodes ?? []}
+            onChange={(next) => setDraft({ ...draft, postcodes: next })}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Min order (€)</span>
+          <input type="number" step="0.5" value={draft.min_order_value ?? 0}
+            onChange={(e) => setDraft({ ...draft, min_order_value: parseFloat(e.target.value) })}
+            className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
+        </label>
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Delivery fee (€)</span>
+          <input type="number" step="0.05" value={draft.delivery_fee ?? 0}
+            onChange={(e) => setDraft({ ...draft, delivery_fee: parseFloat(e.target.value) })}
+            className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
+        </label>
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Free above (€)</span>
+          <input type="number" step="0.5" value={draft.free_above ?? ""}
+            onChange={(e) => setDraft({ ...draft, free_above: e.target.value ? parseFloat(e.target.value) : null })}
+            className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
+        </label>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={save} className="rounded-full bg-gradient-gold px-4 py-2 text-xs font-semibold text-ink flex items-center gap-1.5">
+          <Save className="h-3.5 w-3.5" /> {id === "new" ? "Create zone" : "Save changes"}
+        </button>
+        <button onClick={() => { setEditing(null); setDraft(emptyDraft()); }} className="rounded-full gold-border px-4 py-2 text-xs text-ivory flex items-center gap-1.5">
+          <X className="h-3.5 w-3.5" /> Cancel
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        {editing !== "new" && (
+          <button
+            onClick={() => { setEditing("new"); setDraft(emptyDraft()); }}
+            className="rounded-full bg-gradient-gold px-4 py-2 text-xs font-semibold text-ink flex items-center gap-1.5"
+          >
+            <Plus className="h-3.5 w-3.5" /> Create new zone
+          </button>
+        )}
+      </div>
+
+      {editing === "new" && renderEditor("new")}
+
       {zones.map((z) => {
         const isEditing = editing === z.id;
+        if (isEditing) return <div key={z.id}>{renderEditor(z.id)}</div>;
         return (
-          <div key={z.id} className="rounded-xl gold-border bg-card/40 p-4">
-            {isEditing ? (
-              <div className="grid sm:grid-cols-2 gap-3">
-                <label className="block sm:col-span-2">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Area</span>
-                  <input value={draft.area ?? ""} onChange={(e) => setDraft({ ...draft, area: e.target.value })}
-                    className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
-                </label>
-                <label className="block sm:col-span-2">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Postcodes (comma separated)</span>
-                  <input
-                    value={(draft.postcodes ?? []).join(", ")}
-                    onChange={(e) => setDraft({ ...draft, postcodes: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                    className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
-                </label>
-                <label className="block">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Min order (€)</span>
-                  <input type="number" step="0.5" value={draft.min_order_value ?? 0}
-                    onChange={(e) => setDraft({ ...draft, min_order_value: parseFloat(e.target.value) })}
-                    className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
-                </label>
-                <label className="block">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Delivery fee (€)</span>
-                  <input type="number" step="0.05" value={draft.delivery_fee ?? 0}
-                    onChange={(e) => setDraft({ ...draft, delivery_fee: parseFloat(e.target.value) })}
-                    className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
-                </label>
-                <label className="block">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Free above (€, optional)</span>
-                  <input type="number" step="0.5" value={draft.free_above ?? ""}
-                    onChange={(e) => setDraft({ ...draft, free_above: e.target.value ? parseFloat(e.target.value) : null })}
-                    className="mt-1 w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory" />
-                </label>
-                <label className="flex items-center gap-2 text-sm text-ivory mt-6">
-                  <input type="checkbox" checked={draft.active ?? true} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />
-                  Active
-                </label>
-                <div className="sm:col-span-2 flex gap-2">
-                  <button onClick={() => save(z.id)} className="rounded-full bg-gradient-gold px-4 py-2 text-xs font-semibold text-ink flex items-center gap-1.5">
-                    <Save className="h-3.5 w-3.5" /> Save
-                  </button>
-                  <button onClick={() => setEditing(null)} className="rounded-full gold-border px-4 py-2 text-xs text-ivory flex items-center gap-1.5">
-                    <X className="h-3.5 w-3.5" /> Cancel
-                  </button>
+          <div key={z.id} className={`rounded-xl gold-border bg-card/40 p-4 ${!z.active ? "opacity-70" : ""}`}>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-serif text-base text-ivory">{z.area}</span>
+                  {!z.active && <span className="text-[10px] uppercase tracking-widest text-accent rounded-full bg-accent/15 px-2 py-0.5">Paused</span>}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {z.postcodes.map((pc) => (
+                    <span key={pc} className="rounded-full bg-ink/70 border border-gold/20 px-2 py-0.5 text-[11px] text-ivory/80">{pc}</span>
+                  ))}
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="font-serif text-base text-ivory">{z.area}</div>
-                  <div className="text-xs text-muted-foreground truncate">{z.postcodes.join(", ")}</div>
-                </div>
-                <div className="text-right text-xs text-ivory/80">
-                  <div>min €{Number(z.min_order_value).toFixed(2)}</div>
-                  <div className="text-gold">€{Number(z.delivery_fee).toFixed(2)}{z.free_above ? ` · free €${Number(z.free_above).toFixed(0)}+` : ""}</div>
-                </div>
-                <button onClick={() => { setEditing(z.id); setDraft(z); }} className="rounded-full gold-border p-2 text-ivory hover:bg-gold/10">
+              <div className="text-right text-xs text-ivory/80">
+                <div>min €{Number(z.min_order_value).toFixed(2)}</div>
+                <div className="text-gold">€{Number(z.delivery_fee).toFixed(2)}{z.free_above ? ` · free €${Number(z.free_above).toFixed(0)}+` : ""}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-[11px] text-ivory/80">
+                  <Switch checked={z.active} onCheckedChange={(v) => toggleActive(z, v)} />
+                  {z.active ? "Active" : "Paused"}
+                </label>
+                <button onClick={() => { setEditing(z.id); setDraft(z); }} className="rounded-full gold-border p-2 text-ivory hover:bg-gold/10" aria-label="Edit">
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
+                <button onClick={() => remove(z)} className="rounded-full gold-border p-2 text-ivory hover:bg-accent/15 hover:text-accent" aria-label="Delete">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         );
       })}
@@ -258,6 +507,7 @@ const ZonesTab = () => {
   );
 };
 
+/* -------------------- Orders / Seed (unchanged) -------------------- */
 const OrdersTab = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -367,8 +617,11 @@ const SeedTab = () => {
 const Dashboard = () => {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
-      <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-ink-soft border border-gold/15">
+      <Tabs defaultValue="status" className="w-full">
+        <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-ink-soft border border-gold/15">
+          <TabsTrigger value="status" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
+            <Settings className="h-3.5 w-3.5 mr-1.5" /> Store status
+          </TabsTrigger>
           <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             <ShoppingBag className="h-3.5 w-3.5 mr-1.5" /> Orders
           </TabsTrigger>
@@ -382,6 +635,7 @@ const Dashboard = () => {
             Seed
           </TabsTrigger>
         </TabsList>
+        <TabsContent value="status" className="mt-6"><StoreStatusTab /></TabsContent>
         <TabsContent value="orders" className="mt-6"><OrdersTab /></TabsContent>
         <TabsContent value="products" className="mt-6"><ProductsTab /></TabsContent>
         <TabsContent value="zones" className="mt-6"><ZonesTab /></TabsContent>

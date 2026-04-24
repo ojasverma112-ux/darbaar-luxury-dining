@@ -101,6 +101,28 @@ Deno.serve(async (req) => {
       // Silently ignore "already exists" — we still place the order as guest
     }
 
+    // ---- GATEKEEPER #1: global store_settings ----
+    const { data: settings } = await admin
+      .from("store_settings")
+      .select("is_delivery_open, is_pickup_open")
+      .limit(1)
+      .maybeSingle();
+
+    if (settings) {
+      if (body.method === "delivery" && !settings.is_delivery_open) {
+        return new Response(
+          JSON.stringify({ error: "Delivery is currently paused. Please try again later or choose Pickup." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (body.method === "pickup" && !settings.is_pickup_open) {
+        return new Response(
+          JSON.stringify({ error: "Pickup is currently paused. Please try again later." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Look up products by id, recalc prices server-side (anti-tampering)
     const productIds = body.items.map((i) => i.product_id);
     const { data: products, error: prodErr } = await admin

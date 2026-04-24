@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Check, Loader2, Lock, MapPin, Minus, Plus, ShoppingBag, Trash2, User, X } from "lucide-react";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { AlertTriangle, Check, Loader2, Lock, MapPin, Minus, Plus, ShoppingBag, Trash2, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { quoteDelivery, normalizePostcode } from "@/data/delivery";
@@ -27,6 +28,7 @@ const CartDrawer = () => {
   const { lines, isOpen, closeCart, setQty, remove, subtotal, clear } = useCart();
   const { t, lang } = useI18n();
   const { user } = useAuth();
+  const { settings } = useStoreSettings();
 
   const [method, setMethod] = useState<Method>("delivery");
   const [coupon, setCoupon] = useState("");
@@ -93,8 +95,37 @@ const CartDrawer = () => {
 
   const checkoutPostcode = method === "delivery" ? bill.postcode : "";
   const quote = useMemo(() => quoteDelivery(checkoutPostcode, subtotalAfter), [checkoutPostcode, subtotalAfter]);
+
+  // Live check: is the entered postcode in an ACTIVE zone (per database)?
+  const [zoneStatus, setZoneStatus] = useState<"unknown" | "checking" | "active" | "paused" | "out">("unknown");
+  useEffect(() => {
+    if (method !== "delivery" || checkoutPostcode.length !== 4) {
+      setZoneStatus("unknown");
+      return;
+    }
+    let cancelled = false;
+    setZoneStatus("checking");
+    (async () => {
+      const { data } = await supabase
+        .from("delivery_zones")
+        .select("active")
+        .contains("postcodes", [checkoutPostcode]);
+      if (cancelled) return;
+      if (!data || data.length === 0) setZoneStatus("out");
+      else if (data.some((z) => z.active)) setZoneStatus("active");
+      else setZoneStatus("paused");
+    })();
+    return () => { cancelled = true; };
+  }, [checkoutPostcode, method]);
+
+  const deliveryClosed = !!settings && method === "delivery" && !settings.is_delivery_open;
+  const pickupClosed = !!settings && method === "pickup" && !settings.is_pickup_open;
+  const methodClosed = deliveryClosed || pickupClosed;
+  const postcodePaused = method === "delivery" && zoneStatus === "paused";
+
   const deliveryFee = method === "delivery" && quote.zone ? quote.fee : 0;
   const canDeliver = method !== "delivery" || quote.ok;
+  const canPlace = !methodClosed && !postcodePaused && canDeliver;
   const total = Math.max(0, subtotalAfter + deliveryFee);
 
   const apply = () => {
@@ -198,6 +229,13 @@ const CartDrawer = () => {
             </button>
           </header>
 
+          {settings?.temporary_message && (
+            <div className="border-b border-accent/30 bg-accent/10 px-5 py-3 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+              <p className="text-xs text-accent leading-relaxed">{settings.temporary_message}</p>
+            </div>
+          )}
+
           {step === "cart" ? (
             <>
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -238,19 +276,40 @@ const CartDrawer = () => {
               {lines.length > 0 && (
                 <div className="border-t border-gold/15 p-5 space-y-4">
                   <div className="flex gap-2 rounded-full gold-border p-1">
-                    {(["delivery", "pickup"] as Method[]).map((mm) => (
-                      <button
-                        key={mm}
-                        onClick={() => setMethod(mm)}
-                        className={cn(
-                          "flex-1 rounded-full py-2 text-xs font-medium uppercase tracking-wider transition-all",
-                          method === mm ? "bg-gradient-gold text-ink" : "text-ivory/70 hover:text-ivory"
-                        )}
-                      >
-                        {mm === "delivery" ? t("cart.deliver") : t("cart.pickup")}
-                      </button>
-                    ))}
+                    {(["delivery", "pickup"] as Method[]).map((mm) => {
+                      const closed = !!settings && (mm === "delivery" ? !settings.is_delivery_open : !settings.is_pickup_open);
+                      return (
+                        <button
+                          key={mm}
+                          onClick={() => !closed && setMethod(mm)}
+                          disabled={closed}
+                          title={closed ? (lang === "nl" ? "Tijdelijk gesloten" : "Temporarily closed") : undefined}
+                          className={cn(
+                            "flex-1 rounded-full py-2 text-xs font-medium uppercase tracking-wider transition-all",
+                            method === mm ? "bg-gradient-gold text-ink" : "text-ivory/70 hover:text-ivory",
+                            closed && "opacity-40 cursor-not-allowed line-through"
+                          )}
+                        >
+                          {mm === "delivery" ? t("cart.deliver") : t("cart.pickup")}
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {methodClosed && (
+                    <div className="rounded-xl border border-accent/30 bg-accent/10 p-3 text-xs text-accent flex items-start gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <span>
+                        {method === "delivery"
+                          ? (lang === "nl"
+                            ? "Bezorging is tijdelijk gepauzeerd. Probeer het later opnieuw of kies Afhalen."
+                            : "Delivery is currently paused. Please try again later or choose Pickup.")
+                          : (lang === "nl"
+                            ? "Afhalen is tijdelijk gepauzeerd. Probeer het later opnieuw."
+                            : "Pickup is currently paused. Please try again later.")}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <input
@@ -394,30 +453,43 @@ const CartDrawer = () => {
 
                   {/* Postcode result */}
                   {method === "delivery" && bill.postcode.length === 4 && (
-                    <div className={cn(
-                      "mt-3 rounded-xl p-3 text-xs",
-                      quote.zone ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300"
-                                  : "bg-accent/10 border border-accent/30 text-accent"
-                    )}>
-                      {quote.zone ? (
-                        <div className="flex items-start gap-2">
-                          <Check className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                          <div>
-                            <div>{t("cart.postcodeOk")} <strong>{quote.zone.area}</strong></div>
-                            <div className="mt-1 text-ivory/70">
-                              {t("cart.zoneFee")}: €{quote.zone.fee.toFixed(2)}
-                              {quote.zone.freeAbove && ` (${lang === "nl" ? "gratis vanaf" : "free from"} €${quote.zone.freeAbove})`}
-                              {" · "}{t("cart.zoneMin")}: €{quote.zone.minOrder.toFixed(2)}
-                            </div>
-                            {quote.reason === "below-minimum" && (
-                              <div className="mt-1 text-accent">{t("cart.minOrder")} €{quote.zone.minOrder.toFixed(2)}</div>
-                            )}
-                          </div>
+                    <>
+                      {zoneStatus === "paused" ? (
+                        <div className="mt-3 rounded-xl p-3 text-xs bg-accent/10 border border-accent/30 text-accent flex items-start gap-2">
+                          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                          <span>
+                            {lang === "nl"
+                              ? "Bezorging naar deze postcode is tijdelijk gepauzeerd."
+                              : "Delivery to this postal code is temporarily paused."}
+                          </span>
                         </div>
                       ) : (
-                        t("cart.postcodeOut")
+                        <div className={cn(
+                          "mt-3 rounded-xl p-3 text-xs",
+                          quote.zone ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300"
+                                      : "bg-accent/10 border border-accent/30 text-accent"
+                        )}>
+                          {quote.zone ? (
+                            <div className="flex items-start gap-2">
+                              <Check className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                              <div>
+                                <div>{t("cart.postcodeOk")} <strong>{quote.zone.area}</strong></div>
+                                <div className="mt-1 text-ivory/70">
+                                  {t("cart.zoneFee")}: €{quote.zone.fee.toFixed(2)}
+                                  {quote.zone.freeAbove && ` (${lang === "nl" ? "gratis vanaf" : "free from"} €${quote.zone.freeAbove})`}
+                                  {" · "}{t("cart.zoneMin")}: €{quote.zone.minOrder.toFixed(2)}
+                                </div>
+                                {quote.reason === "below-minimum" && (
+                                  <div className="mt-1 text-accent">{t("cart.minOrder")} €{quote.zone.minOrder.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            t("cart.postcodeOut")
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
 
                   {/* Create account */}
@@ -513,7 +585,7 @@ const CartDrawer = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={placing || !canDeliver}
+                    disabled={placing || !canPlace}
                     className="flex-1 rounded-full bg-gradient-gold px-4 py-3 text-sm font-semibold text-ink shadow-gold hover:scale-[1.02] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {placing && <Loader2 className="h-4 w-4 animate-spin" />}

@@ -585,7 +585,7 @@ const CartDrawer = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={placing || !canDeliver}
+                    disabled={placing || !canPlace}
                     className="flex-1 rounded-full bg-gradient-gold px-4 py-3 text-sm font-semibold text-ink shadow-gold hover:scale-[1.02] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {placing && <Loader2 className="h-4 w-4 animate-spin" />}

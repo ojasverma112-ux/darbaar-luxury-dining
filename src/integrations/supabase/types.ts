@@ -303,6 +303,36 @@ export type Database = {
         }
         Relationships: []
       }
+      store_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_delivery_open: boolean
+          is_pickup_open: boolean
+          standard_lead_time_minutes: number
+          temporary_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_delivery_open?: boolean
+          is_pickup_open?: boolean
+          standard_lead_time_minutes?: number
+          temporary_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_delivery_open?: boolean
+          is_pickup_open?: boolean
+          standard_lead_time_minutes?: number
+          temporary_message?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

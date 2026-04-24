@@ -229,6 +229,13 @@ const CartDrawer = () => {
             </button>
           </header>
 
+          {settings?.temporary_message && (
+            <div className="border-b border-accent/30 bg-accent/10 px-5 py-3 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+              <p className="text-xs text-accent leading-relaxed">{settings.temporary_message}</p>
+            </div>
+          )}
+
           {step === "cart" ? (
             <>
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -269,19 +276,40 @@ const CartDrawer = () => {
               {lines.length > 0 && (
                 <div className="border-t border-gold/15 p-5 space-y-4">
                   <div className="flex gap-2 rounded-full gold-border p-1">
-                    {(["delivery", "pickup"] as Method[]).map((mm) => (
-                      <button
-                        key={mm}
-                        onClick={() => setMethod(mm)}
-                        className={cn(
-                          "flex-1 rounded-full py-2 text-xs font-medium uppercase tracking-wider transition-all",
-                          method === mm ? "bg-gradient-gold text-ink" : "text-ivory/70 hover:text-ivory"
-                        )}
-                      >
-                        {mm === "delivery" ? t("cart.deliver") : t("cart.pickup")}
-                      </button>
-                    ))}
+                    {(["delivery", "pickup"] as Method[]).map((mm) => {
+                      const closed = !!settings && (mm === "delivery" ? !settings.is_delivery_open : !settings.is_pickup_open);
+                      return (
+                        <button
+                          key={mm}
+                          onClick={() => !closed && setMethod(mm)}
+                          disabled={closed}
+                          title={closed ? (lang === "nl" ? "Tijdelijk gesloten" : "Temporarily closed") : undefined}
+                          className={cn(
+                            "flex-1 rounded-full py-2 text-xs font-medium uppercase tracking-wider transition-all",
+                            method === mm ? "bg-gradient-gold text-ink" : "text-ivory/70 hover:text-ivory",
+                            closed && "opacity-40 cursor-not-allowed line-through"
+                          )}
+                        >
+                          {mm === "delivery" ? t("cart.deliver") : t("cart.pickup")}
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {methodClosed && (
+                    <div className="rounded-xl border border-accent/30 bg-accent/10 p-3 text-xs text-accent flex items-start gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <span>
+                        {method === "delivery"
+                          ? (lang === "nl"
+                            ? "Bezorging is tijdelijk gepauzeerd. Probeer het later opnieuw of kies Afhalen."
+                            : "Delivery is currently paused. Please try again later or choose Pickup.")
+                          : (lang === "nl"
+                            ? "Afhalen is tijdelijk gepauzeerd. Probeer het later opnieuw."
+                            : "Pickup is currently paused. Please try again later.")}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <input

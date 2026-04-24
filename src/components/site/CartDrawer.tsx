@@ -28,6 +28,7 @@ const CartDrawer = () => {
   const { lines, isOpen, closeCart, setQty, remove, subtotal, clear } = useCart();
   const { t, lang } = useI18n();
   const { user } = useAuth();
+  const { settings } = useStoreSettings();
 
   const [method, setMethod] = useState<Method>("delivery");
   const [coupon, setCoupon] = useState("");

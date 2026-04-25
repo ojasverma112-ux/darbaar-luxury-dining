@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, LogOut, Package, MapPin, ShoppingBag, Save, Edit2, X, Settings, Plus, Trash2, ShieldCheck } from "lucide-react";
+import { Loader2, LogOut, Package, MapPin, ShoppingBag, Save, Edit2, X, Settings, Plus, Trash2, ShieldCheck, Megaphone, Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 
@@ -720,11 +720,269 @@ const AdminEmailsTab = () => {
   );
 };
 
+/* -------------------- Announcements / Promo Bars -------------------- */
+interface Announcement {
+  id: string;
+  message: string;
+  link_url: string | null;
+  active: boolean;
+  display_order: number;
+  bg_color: string | null;
+  text_color: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+}
+
+const emptyAnn: Omit<Announcement, "id"> = {
+  message: "",
+  link_url: "",
+  active: true,
+  display_order: 0,
+  bg_color: "",
+  text_color: "",
+  starts_at: null,
+  ends_at: null,
+};
+
+const AnnouncementsTab = () => {
+  const [list, setList] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Announcement | null>(null);
+  const [draft, setDraft] = useState<Omit<Announcement, "id">>(emptyAnn);
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("announcements")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    setList((data as Announcement[]) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const startNew = () => { setEditing(null); setDraft(emptyAnn); };
+  const startEdit = (a: Announcement) => {
+    setEditing(a);
+    setDraft({
+      message: a.message,
+      link_url: a.link_url ?? "",
+      active: a.active,
+      display_order: a.display_order,
+      bg_color: a.bg_color ?? "",
+      text_color: a.text_color ?? "",
+      starts_at: a.starts_at,
+      ends_at: a.ends_at,
+    });
+  };
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!draft.message.trim()) {
+      toast({ title: "Message required", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const payload = {
+      message: draft.message.trim(),
+      link_url: draft.link_url?.trim() || null,
+      active: draft.active,
+      display_order: Number(draft.display_order) || 0,
+      bg_color: draft.bg_color?.trim() || null,
+      text_color: draft.text_color?.trim() || null,
+      starts_at: draft.starts_at || null,
+      ends_at: draft.ends_at || null,
+    };
+    const { error } = editing
+      ? await supabase.from("announcements").update(payload).eq("id", editing.id)
+      : await supabase.from("announcements").insert(payload);
+    setSaving(false);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: editing ? "Banner updated" : "Banner created" });
+    startNew();
+    load();
+  };
+
+  const toggleActive = async (a: Announcement) => {
+    const { error } = await supabase.from("announcements").update({ active: !a.active }).eq("id", a.id);
+    if (error) toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    else load();
+  };
+
+  const remove = async (a: Announcement) => {
+    if (!confirm("Delete this banner?")) return;
+    const { error } = await supabase.from("announcements").delete().eq("id", a.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Banner deleted" }); load(); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl gold-border bg-card/40 p-6">
+        <h3 className="font-serif text-2xl text-ivory mb-1">
+          {editing ? "Edit banner" : "New banner"}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-5">
+          Banners show on top of the website. Toggle them on/off, set colors, link, and optional start/end dates. Multiple active banners rotate every 5 seconds.
+        </p>
+        <form onSubmit={save} className="space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Message *</label>
+            <input
+              value={draft.message}
+              onChange={(e) => setDraft({ ...draft, message: e.target.value })}
+              placeholder="Free delivery on orders over €30 — code DELHI10"
+              className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+            />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Link URL (optional)</label>
+              <input
+                value={draft.link_url ?? ""}
+                onChange={(e) => setDraft({ ...draft, link_url: e.target.value })}
+                placeholder="https://... or /menu"
+                className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Display order</label>
+              <input
+                type="number"
+                value={draft.display_order}
+                onChange={(e) => setDraft({ ...draft, display_order: Number(e.target.value) })}
+                className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+              />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Background color (CSS)</label>
+              <input
+                value={draft.bg_color ?? ""}
+                onChange={(e) => setDraft({ ...draft, bg_color: e.target.value })}
+                placeholder="#111 or hsl(45 80% 55%) — leave blank for default gold"
+                className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Text color (CSS)</label>
+              <input
+                value={draft.text_color ?? ""}
+                onChange={(e) => setDraft({ ...draft, text_color: e.target.value })}
+                placeholder="#fff"
+                className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+              />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Starts at (optional)</label>
+              <input
+                type="datetime-local"
+                value={draft.starts_at ? draft.starts_at.slice(0, 16) : ""}
+                onChange={(e) => setDraft({ ...draft, starts_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Ends at (optional)</label>
+              <input
+                type="datetime-local"
+                value={draft.ends_at ? draft.ends_at.slice(0, 16) : ""}
+                onChange={(e) => setDraft({ ...draft, ends_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                className="w-full rounded-lg gold-border bg-ink px-3 py-2 text-sm text-ivory"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={draft.active} onCheckedChange={(v) => setDraft({ ...draft, active: v })} />
+            <span className="text-sm text-ivory">Active (visible on site)</span>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-full bg-gradient-gold px-5 py-2 text-sm font-semibold text-ink flex items-center gap-2 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" /> {editing ? "Update banner" : "Create banner"}
+            </button>
+            {editing && (
+              <button
+                type="button"
+                onClick={startNew}
+                className="rounded-full gold-border px-5 py-2 text-sm text-ivory"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {loading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-gold mx-auto mt-10" />
+      ) : !list.length ? (
+        <div className="rounded-xl gold-border p-8 text-center text-muted-foreground">No banners yet.</div>
+      ) : (
+        <div className="space-y-2">
+          {list.map((a) => (
+            <div key={a.id} className="rounded-xl gold-border bg-card/40 p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div
+                  className="rounded px-3 py-1.5 text-xs font-semibold inline-block max-w-full truncate"
+                  style={{
+                    background: a.bg_color || "linear-gradient(90deg, hsl(45 80% 55%), hsl(40 75% 50%))",
+                    color: a.text_color || "#1a1a1a",
+                  }}
+                  title={a.message}
+                >
+                  {a.message}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Order {a.display_order} · {a.active ? "Active" : "Hidden"}
+                  {a.link_url ? ` · → ${a.link_url}` : ""}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => toggleActive(a)}
+                  className="rounded-full gold-border p-2 text-ivory hover:bg-gold/10"
+                  aria-label={a.active ? "Hide" : "Show"}
+                  title={a.active ? "Hide" : "Show"}
+                >
+                  {a.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+                <button
+                  onClick={() => startEdit(a)}
+                  className="rounded-full gold-border p-2 text-ivory hover:bg-gold/10"
+                  aria-label="Edit"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => remove(a)}
+                  className="rounded-full gold-border p-2 text-ivory hover:bg-accent/15 hover:text-accent"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Dashboard = () => {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <Tabs defaultValue="status" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-6 bg-ink-soft border border-gold/15">
+        <TabsList className="grid w-full max-w-5xl grid-cols-7 bg-ink-soft border border-gold/15">
           <TabsTrigger value="status" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             <Settings className="h-3.5 w-3.5 mr-1.5" /> Status
           </TabsTrigger>

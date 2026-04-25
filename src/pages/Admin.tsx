@@ -998,6 +998,9 @@ const Dashboard = () => {
           <TabsTrigger value="admins" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Admins
           </TabsTrigger>
+          <TabsTrigger value="banners" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
+            <Megaphone className="h-3.5 w-3.5 mr-1.5" /> Banners
+          </TabsTrigger>
           <TabsTrigger value="seed" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             Seed
           </TabsTrigger>
@@ -1007,6 +1010,7 @@ const Dashboard = () => {
         <TabsContent value="products" className="mt-6"><ProductsTab /></TabsContent>
         <TabsContent value="zones" className="mt-6"><ZonesTab /></TabsContent>
         <TabsContent value="admins" className="mt-6"><AdminEmailsTab /></TabsContent>
+        <TabsContent value="banners" className="mt-6"><AnnouncementsTab /></TabsContent>
         <TabsContent value="seed" className="mt-6"><SeedTab /></TabsContent>
       </Tabs>
     </main>

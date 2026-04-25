@@ -578,6 +578,35 @@ const CartDrawer = () => {
                   <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputCls} />
                 </Field>
 
+                {/* Payment method */}
+                <div>
+                  <h3 className="font-serif text-xl text-ivory mb-3">{lang === "nl" ? "Betaalwijze" : "Payment method"}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["cash", "stripe"] as const).map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setPayWith(opt)}
+                        className={cn(
+                          "rounded-xl gold-border px-4 py-3 text-left transition-all",
+                          payWith === opt ? "bg-gold/15 border-gold/60" : "bg-ink hover:bg-gold/5"
+                        )}
+                      >
+                        <div className="text-sm font-medium text-ivory">
+                          {opt === "cash"
+                            ? (lang === "nl" ? "Contant / pin bij ontvangst" : "Cash / card on delivery")
+                            : (lang === "nl" ? "Online betalen (Stripe)" : "Pay online (Stripe)")}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {opt === "cash"
+                            ? (lang === "nl" ? "Betaal bij de bezorger of in de winkel" : "Pay the courier or at the restaurant")
+                            : (lang === "nl" ? "iDEAL, Bancontact, kaarten en meer" : "iDEAL, Bancontact, cards and more")}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Totals */}
                 <div className="rounded-xl gold-border bg-card/40 p-4 space-y-1.5 text-sm">
                   <div className="flex justify-between text-ivory/80"><span>{t("cart.subtotal")}</span><span>€{subtotal.toFixed(2)}</span></div>

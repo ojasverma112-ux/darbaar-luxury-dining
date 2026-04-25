@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://ojasverma112-ux.github.io/delhi-darbaar-factory-dining",
+  "homepage": "https://ojasverma112-ux.github.io/darbaar-luxury-dining",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

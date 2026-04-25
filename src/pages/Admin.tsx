@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, LogOut, Package, MapPin, ShoppingBag, Save, Edit2, X, Settings, Plus, Trash2 } from "lucide-react";
+import { Loader2, LogOut, Package, MapPin, ShoppingBag, Save, Edit2, X, Settings, Plus, Trash2, ShieldCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 
@@ -614,13 +614,119 @@ const SeedTab = () => {
   );
 };
 
+/* -------------------- Admin Emails -------------------- */
+interface AdminEmail { id: string; email: string; created_at: string }
+
+const AdminEmailsTab = () => {
+  const [list, setList] = useState<AdminEmail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newEmail, setNewEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("admin_emails").select("*").order("created_at", { ascending: false });
+    setList((data as AdminEmail[]) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: "Invalid email", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("admin_emails").insert({ email });
+    setSaving(false);
+    if (error) {
+      toast({ title: "Add failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    // Promote any matching existing user to admin immediately
+    const { data: matchedProfile } = await supabase.from("profiles").select("user_id").eq("email", email).maybeSingle();
+    if (matchedProfile?.user_id) {
+      await supabase.from("user_roles").insert({ user_id: matchedProfile.user_id, role: "admin" }).then(() => {});
+    }
+    toast({ title: "Admin email added" });
+    setNewEmail("");
+    load();
+  };
+
+  const remove = async (row: AdminEmail) => {
+    if (!confirm(`Revoke admin access for ${row.email}?`)) return;
+    const { error } = await supabase.from("admin_emails").delete().eq("id", row.id);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    // Also revoke role for any matching user
+    const { data: matchedProfile } = await supabase.from("profiles").select("user_id").eq("email", row.email).maybeSingle();
+    if (matchedProfile?.user_id) {
+      await supabase.from("user_roles").delete().eq("user_id", matchedProfile.user_id).eq("role", "admin");
+    }
+    toast({ title: "Admin removed" });
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl gold-border bg-card/40 p-6">
+        <h3 className="font-serif text-2xl text-ivory mb-1">Admin access list</h3>
+        <p className="text-sm text-muted-foreground mb-5">
+          Only people with their email on this list can sign in to <code className="text-gold">/admin</code>. New signups matching these emails are auto-promoted.
+        </p>
+        <form onSubmit={add} className="flex gap-2">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="email@example.com"
+            className="flex-1 rounded-full gold-border bg-ink px-4 py-2 text-sm text-ivory"
+          />
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-full bg-gradient-gold px-4 py-2 text-xs font-semibold text-ink flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add
+          </button>
+        </form>
+      </div>
+
+      {loading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-gold mx-auto mt-10" />
+      ) : !list.length ? (
+        <div className="rounded-xl gold-border p-8 text-center text-muted-foreground">No approved admin emails.</div>
+      ) : (
+        <div className="space-y-2">
+          {list.map((row) => (
+            <div key={row.id} className="rounded-xl gold-border bg-card/40 p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <ShieldCheck className="h-4 w-4 text-gold shrink-0" />
+                <span className="text-sm text-ivory truncate">{row.email}</span>
+              </div>
+              <button
+                onClick={() => remove(row)}
+                className="rounded-full gold-border p-2 text-ivory hover:bg-accent/15 hover:text-accent"
+                aria-label="Revoke admin"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Dashboard = () => {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <Tabs defaultValue="status" className="w-full">
-        <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-ink-soft border border-gold/15">
+        <TabsList className="grid w-full max-w-4xl grid-cols-6 bg-ink-soft border border-gold/15">
           <TabsTrigger value="status" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
-            <Settings className="h-3.5 w-3.5 mr-1.5" /> Store status
+            <Settings className="h-3.5 w-3.5 mr-1.5" /> Status
           </TabsTrigger>
           <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             <ShoppingBag className="h-3.5 w-3.5 mr-1.5" /> Orders
@@ -631,6 +737,9 @@ const Dashboard = () => {
           <TabsTrigger value="zones" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             <MapPin className="h-3.5 w-3.5 mr-1.5" /> Zones
           </TabsTrigger>
+          <TabsTrigger value="admins" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
+            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Admins
+          </TabsTrigger>
           <TabsTrigger value="seed" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-ink">
             Seed
           </TabsTrigger>
@@ -639,6 +748,7 @@ const Dashboard = () => {
         <TabsContent value="orders" className="mt-6"><OrdersTab /></TabsContent>
         <TabsContent value="products" className="mt-6"><ProductsTab /></TabsContent>
         <TabsContent value="zones" className="mt-6"><ZonesTab /></TabsContent>
+        <TabsContent value="admins" className="mt-6"><AdminEmailsTab /></TabsContent>
         <TabsContent value="seed" className="mt-6"><SeedTab /></TabsContent>
       </Tabs>
     </main>

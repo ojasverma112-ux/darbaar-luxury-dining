@@ -99,9 +99,9 @@ const Navbar = () => {
               )}
 
               <Link
-                to="/auth"
+                to={user ? "/profile" : "/auth"}
                 className="rounded-full p-2.5 gold-border hover:bg-gold/10 transition-all"
-                aria-label={user ? "Account" : "Sign in"}
+                aria-label={user ? "My account" : "Sign in"}
                 title={user?.email ?? "Sign in"}
               >
                 <User className="h-4 w-4 text-ivory" />

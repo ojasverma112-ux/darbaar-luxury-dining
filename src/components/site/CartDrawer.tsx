@@ -64,6 +64,9 @@ const CartDrawer = () => {
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPassword, setAccountPassword] = useState("");
 
+  // Payment method
+  const [payWith, setPayWith] = useState<"cash" | "stripe">("cash");
+
   // Honeypot — bots fill, humans never see
   const [hp, setHp] = useState("");
 
@@ -180,12 +183,28 @@ const CartDrawer = () => {
           coupon_code: applied ? "DARBAAR" : undefined,
           create_account: !user && createAccount,
           account_password: !user && createAccount ? accountPassword : undefined,
+          pay_with: payWith,
           hp,
         },
         headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // Online payment → create a Stripe Checkout Session and redirect
+      if (payWith === "stripe") {
+        const { data: stripeData, error: stripeErr } = await supabase.functions.invoke("create-checkout-session", {
+          body: { order_id: data.order_id, success_path: "/order-success", cancel_path: "/" },
+          headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        });
+        if (stripeErr) throw stripeErr;
+        if (stripeData?.error) throw new Error(stripeData.error);
+        if (!stripeData?.url) throw new Error("Stripe checkout URL missing");
+        window.location.href = stripeData.url;
+        return; // browser navigates away
+      }
+
+      // Cash flow — confirm immediately in-app
       toast({
         title: lang === "nl" ? "Bestelling geplaatst!" : "Order placed!",
         description: `${data.order_number} · €${data.total.toFixed(2)}`,
@@ -559,6 +578,35 @@ const CartDrawer = () => {
                   <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputCls} />
                 </Field>
 
+                {/* Payment method */}
+                <div>
+                  <h3 className="font-serif text-xl text-ivory mb-3">{lang === "nl" ? "Betaalwijze" : "Payment method"}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["cash", "stripe"] as const).map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setPayWith(opt)}
+                        className={cn(
+                          "rounded-xl gold-border px-4 py-3 text-left transition-all",
+                          payWith === opt ? "bg-gold/15 border-gold/60" : "bg-ink hover:bg-gold/5"
+                        )}
+                      >
+                        <div className="text-sm font-medium text-ivory">
+                          {opt === "cash"
+                            ? (lang === "nl" ? "Contant / pin bij ontvangst" : "Cash / card on delivery")
+                            : (lang === "nl" ? "Online betalen (Stripe)" : "Pay online (Stripe)")}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {opt === "cash"
+                            ? (lang === "nl" ? "Betaal bij de bezorger of in de winkel" : "Pay the courier or at the restaurant")
+                            : (lang === "nl" ? "iDEAL, Bancontact, kaarten en meer" : "iDEAL, Bancontact, cards and more")}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Totals */}
                 <div className="rounded-xl gold-border bg-card/40 p-4 space-y-1.5 text-sm">
                   <div className="flex justify-between text-ivory/80"><span>{t("cart.subtotal")}</span><span>€{subtotal.toFixed(2)}</span></div>
@@ -589,7 +637,11 @@ const CartDrawer = () => {
                     className="flex-1 rounded-full bg-gradient-gold px-4 py-3 text-sm font-semibold text-ink shadow-gold hover:scale-[1.02] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {placing && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {placing ? "…" : t("cart.placeOrder")} · €{total.toFixed(2)}
+                    {placing
+                      ? "…"
+                      : payWith === "stripe"
+                        ? `${lang === "nl" ? "Doorgaan naar betaling" : "Continue to payment"} · €${total.toFixed(2)}`
+                        : `${t("cart.placeOrder")} · €${total.toFixed(2)}`}
                   </button>
                 </div>
               </div>

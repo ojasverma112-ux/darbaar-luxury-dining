@@ -8,6 +8,7 @@ const Signatures = () => {
   const { t, lang } = useI18n();
   const { add } = useCart();
   const { menu, signatures } = useMenu();
+
   const items = signatures
     .map((s) => {
       const item = menu.find((m) => m.id === s.id);
@@ -24,33 +25,39 @@ const Signatures = () => {
           sub={t("sig.sub")}
         />
 
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
-          {items.map((it, idx) => (
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
+          {items.map((it) => (
             <article
               key={it.id}
-              className={`group relative overflow-hidden rounded-2xl gold-border bg-card lift ${idx % 3 === 0 ? "float-slow" : idx % 3 === 1 ? "float-med" : "float-fast"}`}
-              style={{ animationDelay: `${idx * 0.4}s` }}
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-card/80 backdrop-blur-sm shadow-[0_10px_35px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-[0_20px_45px_rgba(0,0,0,0.45)]"
             >
               <div className="relative aspect-[4/5] overflow-hidden">
                 <img
                   src={it.image}
                   alt={it.name[lang]}
                   loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-[1200ms] group-hover:scale-110"
+                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
-                <div className="absolute top-3 right-3 rounded-full glass px-2.5 py-1 text-[11px] font-medium text-gold">
+                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/15 to-transparent" />
+                <div className="absolute top-3 right-3 rounded-full border border-gold/40 bg-ink/70 px-2.5 py-1 text-[11px] font-semibold text-gold">
                   €{it.price.toFixed(2)}
                 </div>
               </div>
+
               <div className="p-5">
-                <h3 className="font-serif text-2xl text-ivory leading-tight">{it.name[lang]}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{it.desc[lang]}</p>
+                <h3 className="font-serif text-[1.55rem] leading-tight text-ivory">
+                  {it.name[lang]}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                  {it.desc[lang]}
+                </p>
+
                 <button
                   onClick={() => add(it)}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-ink hover:scale-[1.02] transition-transform"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-ink transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
                 >
-                  <Plus className="h-4 w-4" /> {t("sig.add")}
+                  <Plus className="h-4 w-4" />
+                  {t("sig.add")}
                 </button>
               </div>
             </article>
@@ -59,8 +66,10 @@ const Signatures = () => {
 
         <div className="mt-12 flex justify-center">
           <button
-            onClick={() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })}
-            className="rounded-full gold-border px-6 py-3 text-sm font-medium text-ivory hover:bg-gold/10 hover:border-gold/60 transition-all"
+            onClick={() =>
+              document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-ivory transition-all hover:border-gold/70 hover:bg-gold/10"
           >
             {t("sig.viewMenu")} →
           </button>

@@ -44,6 +44,7 @@ interface Payload {
   coupon_code?: string;
   create_account?: boolean;
   account_password?: string;
+  pay_with?: "cash" | "stripe";
   // honeypot
   hp?: string;
 }
@@ -202,12 +203,18 @@ Deno.serve(async (req) => {
 
     const total = Math.round((subtotalAfter + deliveryFee) * 100) / 100;
 
+    const initialStatus = body.pay_with === "stripe" ? "pending_payment" : "pending";
+    const initialPaymentStatus = body.pay_with === "stripe" ? "pending" : "unpaid";
+
     // Insert order
     const { data: order, error: orderErr } = await admin
       .from("orders")
       .insert({
         user_id: userId,
         method: body.method,
+        status: initialStatus,
+        payment_status: initialPaymentStatus,
+        payment_method: body.pay_with === "stripe" ? "stripe" : "cash",
         customer_email: body.customer.email,
         customer_first_name: body.customer.first_name,
         customer_last_name: body.customer.last_name,
@@ -245,7 +252,7 @@ Deno.serve(async (req) => {
     if (itemsErr) throw itemsErr;
 
     return new Response(
-      JSON.stringify({ ok: true, order_number: order.order_number, total, zone: zoneArea }),
+      JSON.stringify({ ok: true, order_id: order.id, order_number: order.order_number, total, zone: zoneArea }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

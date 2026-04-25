@@ -35,6 +35,48 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          active: boolean
+          bg_color: string | null
+          created_at: string
+          display_order: number
+          ends_at: string | null
+          id: string
+          link_url: string | null
+          message: string
+          starts_at: string | null
+          text_color: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          bg_color?: string | null
+          created_at?: string
+          display_order?: number
+          ends_at?: string | null
+          id?: string
+          link_url?: string | null
+          message: string
+          starts_at?: string | null
+          text_color?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          bg_color?: string | null
+          created_at?: string
+          display_order?: number
+          ends_at?: string | null
+          id?: string
+          link_url?: string | null
+          message?: string
+          starts_at?: string | null
+          text_color?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_zones: {
         Row: {
           active: boolean

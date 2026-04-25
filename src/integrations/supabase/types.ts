@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_emails: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       delivery_zones: {
         Row: {
           active: boolean
@@ -112,6 +133,8 @@ export type Database = {
           method: Database["public"]["Enums"]["delivery_method"]
           notes: string | null
           order_number: string
+          payment_method: string | null
+          payment_status: string
           postcode: string | null
           ship_address: string | null
           ship_city: string | null
@@ -121,6 +144,8 @@ export type Database = {
           ship_postcode: string | null
           ship_to_different: boolean
           status: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
           subtotal: number
           total: number
           updated_at: string
@@ -146,6 +171,8 @@ export type Database = {
           method?: Database["public"]["Enums"]["delivery_method"]
           notes?: string | null
           order_number?: string
+          payment_method?: string | null
+          payment_status?: string
           postcode?: string | null
           ship_address?: string | null
           ship_city?: string | null
@@ -155,6 +182,8 @@ export type Database = {
           ship_postcode?: string | null
           ship_to_different?: boolean
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           subtotal: number
           total: number
           updated_at?: string
@@ -180,6 +209,8 @@ export type Database = {
           method?: Database["public"]["Enums"]["delivery_method"]
           notes?: string | null
           order_number?: string
+          payment_method?: string | null
+          payment_status?: string
           postcode?: string | null
           ship_address?: string | null
           ship_city?: string | null
@@ -189,6 +220,8 @@ export type Database = {
           ship_postcode?: string | null
           ship_to_different?: boolean
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -366,6 +399,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_email_admin: { Args: { _email: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "customer"
@@ -377,6 +411,7 @@ export type Database = {
         | "out_for_delivery"
         | "delivered"
         | "cancelled"
+        | "pending_payment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -513,6 +548,7 @@ export const Constants = {
         "out_for_delivery",
         "delivered",
         "cancelled",
+        "pending_payment",
       ],
     },
   },

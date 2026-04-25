@@ -64,6 +64,9 @@ const CartDrawer = () => {
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPassword, setAccountPassword] = useState("");
 
+  // Payment method
+  const [payWith, setPayWith] = useState<"cash" | "stripe">("cash");
+
   // Honeypot — bots fill, humans never see
   const [hp, setHp] = useState("");
 
@@ -180,12 +183,28 @@ const CartDrawer = () => {
           coupon_code: applied ? "DARBAAR" : undefined,
           create_account: !user && createAccount,
           account_password: !user && createAccount ? accountPassword : undefined,
+          pay_with: payWith,
           hp,
         },
         headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // Online payment → create a Stripe Checkout Session and redirect
+      if (payWith === "stripe") {
+        const { data: stripeData, error: stripeErr } = await supabase.functions.invoke("create-checkout-session", {
+          body: { order_id: data.order_id, success_path: "/order-success", cancel_path: "/" },
+          headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        });
+        if (stripeErr) throw stripeErr;
+        if (stripeData?.error) throw new Error(stripeData.error);
+        if (!stripeData?.url) throw new Error("Stripe checkout URL missing");
+        window.location.href = stripeData.url;
+        return; // browser navigates away
+      }
+
+      // Cash flow — confirm immediately in-app
       toast({
         title: lang === "nl" ? "Bestelling geplaatst!" : "Order placed!",
         description: `${data.order_number} · €${data.total.toFixed(2)}`,

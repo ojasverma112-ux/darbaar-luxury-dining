@@ -637,7 +637,11 @@ const CartDrawer = () => {
                     className="flex-1 rounded-full bg-gradient-gold px-4 py-3 text-sm font-semibold text-ink shadow-gold hover:scale-[1.02] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {placing && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {placing ? "…" : t("cart.placeOrder")} · €{total.toFixed(2)}
+                    {placing
+                      ? "…"
+                      : payWith === "stripe"
+                        ? `${lang === "nl" ? "Doorgaan naar betaling" : "Continue to payment"} · €${total.toFixed(2)}`
+                        : `${t("cart.placeOrder")} · €${total.toFixed(2)}`}
                   </button>
                 </div>
               </div>

@@ -65,7 +65,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loading,
       isAdmin,
       signOut: async () => {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "global" });
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
       },
     }),
     [user, session, loading, isAdmin]

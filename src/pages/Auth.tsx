@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { I18nProvider, useI18n } from "@/contexts/I18nContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -20,6 +20,7 @@ const schema = z.object({
 
 const Form = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading } = useAuth();
   const { lang } = useI18n();
   const [mode, setMode] = useState<Mode>("login");
@@ -28,10 +29,12 @@ const Form = () => {
   const [hp, setHp] = useState(""); // honeypot
   const [busy, setBusy] = useState(false);
 
-  // Already logged in → home
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
+
+  // Already logged in → intended page or home
   useEffect(() => {
-    if (!loading && user) navigate("/", { replace: true });
-  }, [user, loading, navigate]);
+    if (!loading && user) navigate(from, { replace: true });
+  }, [user, loading, navigate, from]);
 
   const t = (nl: string, en: string) => (lang === "nl" ? nl : en);
 
@@ -48,7 +51,7 @@ const Form = () => {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: { emailRedirectTo: `${window.location.origin}${from}` },
         });
         if (error) throw error;
         toast({ title: t("Account aangemaakt", "Account created") });
@@ -57,7 +60,7 @@ const Form = () => {
         if (error) throw error;
         toast({ title: t("Welkom terug", "Welcome back") });
       }
-      navigate("/", { replace: true });
+      navigate(from, { replace: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error";
       toast({ title: t("Mislukt", "Failed"), description: msg, variant: "destructive" });
@@ -68,11 +71,17 @@ const Form = () => {
 
   const google = async () => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/` });
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}${from}`,
+      extraParams: { prompt: "select_account" },
+    });
     if (result.error) {
       toast({ title: "Google sign-in failed", variant: "destructive" });
       setBusy(false);
+      return;
     }
+
+    if (!result.redirected) navigate(from, { replace: true });
   };
 
   return (

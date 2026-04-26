@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -36,13 +36,20 @@ interface StoreSettings {
 
 const Header = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
+
   return (
     <header className="border-b border-gold/15 bg-ink-soft">
       <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <Link to="/" className="font-serif text-2xl text-gold">Delhi Darbaar · Admin</Link>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-muted-foreground">{user?.email}</span>
-          <button onClick={signOut} className="rounded-full gold-border px-3 py-1.5 text-xs text-ivory hover:bg-gold/10 flex items-center gap-1.5">
+          <button onClick={logout} className="rounded-full gold-border px-3 py-1.5 text-xs text-ivory hover:bg-gold/10 flex items-center gap-1.5">
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </button>
         </div>

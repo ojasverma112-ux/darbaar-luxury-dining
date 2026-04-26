@@ -19,40 +19,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up listener FIRST to avoid missing events
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const syncSession = async (newSession: Session | null) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
-      if (newSession?.user) {
-        // Defer the role lookup so we don't block the auth callback
-        setTimeout(() => {
-          supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", newSession.user.id)
-            .eq("role", "admin")
-            .maybeSingle()
-            .then(({ data }) => setIsAdmin(!!data));
-        }, 0);
-      } else {
+
+      if (!newSession?.user) {
         setIsAdmin(false);
+        setLoading(false);
+        return;
       }
+
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", newSession.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      setIsAdmin(!!data);
+      setLoading(false);
+    };
+
+    // Set up listener FIRST to avoid missing events
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setLoading(true);
+      setTimeout(() => { void syncSession(newSession); }, 0);
     });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: existing } }) => {
-      setSession(existing);
-      setUser(existing?.user ?? null);
-      if (existing?.user) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", existing.user.id)
-          .eq("role", "admin")
-          .maybeSingle()
-          .then(({ data }) => setIsAdmin(!!data));
-      }
-      setLoading(false);
+      void syncSession(existing);
     });
 
     return () => sub.subscription.unsubscribe();

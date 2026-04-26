@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo-delhi-darbaar.png";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 const sectionLinks: { id: string; key: "nav.menu" | "nav.signatures" | "nav.story" | "nav.reviews" | "nav.reserve" | "nav.contact" }[] = [
   { id: "signatures", key: "nav.signatures" },
@@ -19,7 +20,7 @@ const sectionLinks: { id: string; key: "nav.menu" | "nav.signatures" | "nav.stor
 const Navbar = () => {
   const { t, lang, setLang } = useI18n();
   const { count, openCart } = useCart();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -33,6 +34,12 @@ const Navbar = () => {
   const scrollTo = (id: string) => {
     setMobileOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const logout = async () => {
+    await signOut();
+    setMobileOpen(false);
+    toast({ title: "Signed out", description: "You can now sign in with another account." });
   };
 
   return (
@@ -107,6 +114,15 @@ const Navbar = () => {
                 <User className="h-4 w-4 text-ivory" />
               </Link>
 
+              {user && (
+                <button
+                  onClick={logout}
+                  className="hidden sm:inline-flex rounded-full gold-border px-3 py-1.5 text-xs font-medium text-ivory hover:bg-gold/10"
+                >
+                  Sign out
+                </button>
+              )}
+
               <button
                 onClick={openCart}
                 className="relative rounded-full p-2.5 gold-border hover:bg-gold/10 hover:border-gold/50 transition-all"
@@ -159,6 +175,14 @@ const Navbar = () => {
               </button>
             ))}
             <div className="hairline my-4" />
+            {user && (
+              <button
+                onClick={logout}
+                className="text-left font-serif text-2xl text-ivory hover:text-gold transition-colors py-2"
+              >
+                Sign out
+              </button>
+            )}
             <button
               onClick={() => scrollTo("menu")}
               className="rounded-full bg-gradient-gold px-5 py-3 text-sm font-semibold text-ink"

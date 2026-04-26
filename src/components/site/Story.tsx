@@ -1,5 +1,5 @@
 import { useI18n } from "@/contexts/I18nContext";
-import interior from "@/assets/restaurant-interior.jpg";
+import interior from "@/assets/story-restaurant.png";
 
 const Story = () => {
   const { t } = useI18n();
